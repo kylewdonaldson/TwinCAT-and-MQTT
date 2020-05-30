@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.3">
+  <DUT Name="ST_TemperatureStructure" Id="{bdb6708b-dce7-4d63-abfa-3db6627c8b4a}">
+    <Declaration><![CDATA[TYPE ST_TemperatureStructure :
+STRUCT
+	fRoomTemperature 		: REAL	:= 21;
+	fBathRoomTemperature 	: REAL	:= 18;
+	diSomeOtherData 		: DINT	:= 1124;
+END_STRUCT
+END_TYPE]]></Declaration>
+  </DUT>
+</TcPlcObject>

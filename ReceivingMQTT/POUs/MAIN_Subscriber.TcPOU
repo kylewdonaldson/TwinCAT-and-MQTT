@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.3">
+  <POU Name="MAIN_Subscriber" Id="{5cef631f-7df0-4fb4-b272-baae9902aac5}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN_Subscriber
+VAR
+	fbMqttClient		: FB_IotMqttClient;			// The MQTT client for recieving messages
+    fbMessageQueue		: FB_IotMqttMessageQueue;	// The message queue for handling recieved messages 
+    fbMessage			: FB_IotMqttMessage;		// A message object for processing recieved messages 
+	bSubscribed			: BOOL;
+	sReceivingTopic		: STRING(255);				// The topic of the last message we recieved 	
+	fbJsonDataType 		: FB_JsonReadWriteDataType;	
+	fbGetSystemTime		: GETSYSTEMTIME;
+	
+END_VAR
+
+    
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Setup the MQTT client (we only do this once when the cods runs for the first time)
+fbGetSystemTime();
+IF _TaskInfo[GETCURTASKINDEXEX()].FirstCycle THEN    
+    fbMqttClient.sHostName      := Setup_Parameters.sBrokerAddress;
+    fbMqttClient.nHostPort      := Setup_Parameters.uiBrokerPort;
+    fbMqttClient.sTopicPrefix   := '';     
+	fbMqttClient.ipMessageQueue := fbMessageQueue;
+	fbMqttClient.sClientId 		:= CONCAT('Subscribing_PLC_',DWORD_TO_STRING(fbGetSystemTime.timeLoDW));	// generate and set a psuedorandom client ID 
+END_IF
+
+// Run the MQTT client every cycle
+fbMqttClient.Execute(bConnect :=true);
+
+IF fbMqttClient.bConnected THEN	// Check that we are connected to the broker 
+    IF NOT bSubscribed THEN		// Check if are subscribed, if not we subscribe to the topics of interest to us 
+
+        bSubscribed := fbMqttClient.Subscribe(sTopic:=Setup_Parameters.sPlainStringTopic,
+			eQoS:=TcIotMqttQos.AtMostOnceDelivery);
+			
+        bSubscribed := fbMqttClient.Subscribe(sTopic:=Setup_Parameters.sJsonStringTopic,
+			eQoS:=TcIotMqttQos.AtMostOnceDelivery);
+
+    END_IF // check subscription
+END_IF // check connection 
+
+// Handle the message queue
+IF fbMessageQueue.nQueuedMessages > 0 THEN	// if we have messages in the queue
+    IF fbMessageQueue.Dequeue(fbMessage:=fbMessage) THEN	//we pick the latest message, returns TRUE if pick  succeeds
+        fbMessage.GetTopic(pTopic:=ADR(sReceivingTopic), nTopicSize:=SIZEOF(sReceivingTopic) );	// get the topic of the message 
+		// process the received message based on it's topic 		
+		IF sReceivingTopic = Setup_Parameters.sJsonStringTopic THEN	// if the topic is the JSON topic
+			IF(fbMessage.GetPayload(pPayload:=ADR(Data_Received.sJSonStringReceived), nPayloadSize:=SIZEOF(Data_Received.sJSonStringReceived), bSetNullTermination:=FALSE)) THEN
+				Data_Received.uiJSONReceived	:= Data_Received.uiJSONReceived + 1;	// count JSON messages received
+			END_IF // payload retreived
+			IF(fbJsonDataType.SetSymbolFromJson(Data_Received.sJSonStringReceived, 'ST_TemperatureStructure', SIZEOF(Data_Received.stTempData), ADR(Data_Received.stTempData))) THEN
+				Data_Received.uiJSONProcessed	:= Data_Received.uiJSONProcessed + 1;	// count JSON messages processed
+			END_IF // JSON processed 
+		ELSIF(sReceivingTopic = Setup_Parameters.sPlainStringTopic) THEN // if the topic is the plain string topic
+       		IF(fbMessage.GetPayload(pPayload:=ADR(Data_Received.sPlainStringReceived), nPayloadSize:=SIZEOF(Data_Received.sPlainStringReceived), bSetNullTermination:=FALSE)) THEN
+				Data_Received.uiPlainReceived	:= Data_Received.uiPlainReceived + 1;	// count plain messages received
+			END_IF	// payload retrieved		
+		END_IF // check recieved message topic 
+    END_IF // successfully deqeued a message 
+END_IF // more than 0 messages in the queue]]></ST>
+    </Implementation>
+    <LineIds Name="MAIN_Subscriber">
+      <LineId Id="133" Count="0" />
+      <LineId Id="195" Count="1" />
+      <LineId Id="130" Count="2" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="117" Count="0" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="134" Count="0" />
+      <LineId Id="36" Count="1" />
+      <LineId Id="16" Count="2" />
+      <LineId Id="135" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="52" Count="2" />
+      <LineId Id="136" Count="0" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="28" Count="3" />
+      <LineId Id="177" Count="12" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="25" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

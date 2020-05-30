@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.3">
+  <POU Name="FB_GenerateData" Id="{4f21bb5e-b102-4330-81b9-65413e0613d3}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_GenerateData
+VAR_INPUT
+	bRun			: BOOL;
+	pDataStructure	: POINTER TO ST_TemperatureStructure;
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	fbGetSystemTime	: GETSYSTEMTIME;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fbGetSystemTime();
+IF(bRun)THEN
+	IF(pDataStructure <>0)THEN
+		pDataStructure^.fRoomTemperature		:= 21 + pDataStructure^.fRoomTemperature * SIN(fbGetSystemTime.timeLoDW);
+		pDataStructure^.fBathRoomTemperature	:= 18 + pDataStructure^.fBathRoomTemperature * COS(fbGetSystemTime.timeLoDW);
+		pDataStructure^.diSomeOtherData			:= pDataStructure^.diSomeOtherData + (DWORD_TO_DINT(fbGetSystemTime.timeLoDW));
+	END_IF
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="FB_GenerateData">
+      <LineId Id="21" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="18" Count="2" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

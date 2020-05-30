@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.3">
+  <POU Name="MAIN_Publisher" Id="{0d666fc9-df30-40f9-b555-d1129e0440e1}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN_Publisher
+VAR
+	fbMqttClient				: FB_IotMqttClient; 	// MQTT client.       
+    fbSendUpdateIntervalTimer 	: TON := (PT:=Setup_Parameters.tUpdateTime);	// Interval timer for broadcasting( we send updated data when this timer runs out) .
+	
+	fbJsonWriter 	: FB_JsonSaxWriter;			// function block for writing JSON formatted string 
+	fbJsonDataType 	: FB_JsonReadWriteDataType;	// function block for getting JSON formatted string representation of a STRUCT
+	fbGetSystemTime	: GETSYSTEMTIME;
+	fbNoisyData		: FB_GenerateData;
+		
+END_VAR
+
+    ]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// We setup out MQTT client, only happens on the first run of the PLC code
+fbGetSystemTime();
+IF _TaskInfo[GETCURTASKINDEXEX()].FirstCycle THEN    
+    fbMqttClient.sHostName      := Setup_Parameters.sBrokerAddress;
+    fbMqttClient.nHostPort      := Setup_Parameters.uiBrokerPort;
+    fbMqttClient.sTopicPrefix   := '';     
+	fbMqttClient.sClientId 		:= CONCAT('Publishing_PLC_',DWORD_TO_STRING(fbGetSystemTime.timeLoDW));	// generate and set a psuedorandom client ID 
+END_IF
+
+// Generate some noisy data
+fbNoisyData(bRun:= TRUE,pDataStructure:=ADR(Data_Published.stTempData));
+
+// We run the MQTT client every cycle
+fbMqttClient.Execute(TRUE);
+
+IF fbMqttClient.bConnected THEN	// chekc that the MQTT client is connected to the broker
+    fbSendUpdateIntervalTimer(IN:=TRUE);		// run our send update timer  
+    IF fbSendUpdateIntervalTimer.Q THEN			// if the timer has expired (its time to send an update) 
+        fbSendUpdateIntervalTimer(IN:=FALSE);  	// reset our send update timer
+     
+		// Generate out plain formatted string from the data structure
+        Data_Published.sPlainFormattedDataString := CONCAT(CONCAT(CONCAT('*Room temperature:',REAL_TO_STRING(Data_Published.stTempData.fRoomTemperature)),CONCAT('*Bathroom temperature:',REAL_TO_STRING(Data_Published.stTempData.fBathRoomTemperature))),CONCAT('*Some other data:',DINT_TO_STRING(Data_Published.stTempData.diSomeOtherData)));
+		
+		// Publish our plain formatted string message using our MQTT client
+        fbMqttClient.Publish(	sTopic		:= Setup_Parameters.sPlainStringTopic, 
+        						pPayload	:= ADR(Data_Published.sPlainFormattedDataString), 
+								nPayloadSize:= LEN2(ADR(Data_Published.sPlainFormattedDataString))+1, 
+            					eQoS		:= TcIotMqttQos.AtMostOnceDelivery, 
+								bRetain		:= FALSE,
+								bQueue		:= FALSE);
+			
+			
+		// Generate a JSON formatted string representing the data structure
+		fbJsonWriter.ResetDocument();
+		fbJsonDataType.AddJsonValueFromSymbol(fbJsonWriter, 'ST_TemperatureStructure', SIZEOF(Data_Published.stTempData), ADR(Data_Published.stTempData));
+		Data_Published.sJsonFormattedDataString := fbJsonWriter.GetDocument();	// we get the JSON string that the fbJsonDataType FB has generated for us
+			
+		// Publish our JSON formatted string message using our MQTT client
+		fbMqttClient.Publish(	sTopic		:= Setup_Parameters.sJsonStringTopic, 
+								pPayload	:= ADR(Data_Published.sJsonFormattedDataString), 
+								nPayloadSize:= LEN2(ADR(Data_Published.sJsonFormattedDataString))+1, 
+								eQoS		:= TcIotMqttQos.AtMostOnceDelivery, 
+								bRetain		:= FALSE,
+								bQueue		:= FALSE);
+
+		Data_Published.uiSent	:= Data_Published.uiSent + 1;	// count the messages sent  
+    END_IF // Update timer elapsed
+END_IF // Client connected 
+ ]]></ST>
+    </Implementation>
+    <LineIds Name="MAIN_Publisher">
+      <LineId Id="422" Count="0" />
+      <LineId Id="435" Count="0" />
+      <LineId Id="295" Count="0" />
+      <LineId Id="297" Count="2" />
+      <LineId Id="343" Count="0" />
+      <LineId Id="300" Count="0" />
+      <LineId Id="432" Count="0" />
+      <LineId Id="423" Count="0" />
+      <LineId Id="433" Count="0" />
+      <LineId Id="424" Count="0" />
+      <LineId Id="301" Count="6" />
+      <LineId Id="426" Count="1" />
+      <LineId Id="329" Count="0" />
+      <LineId Id="319" Count="0" />
+      <LineId Id="428" Count="0" />
+      <LineId Id="309" Count="1" />
+      <LineId Id="316" Count="0" />
+      <LineId Id="311" Count="0" />
+      <LineId Id="317" Count="0" />
+      <LineId Id="332" Count="0" />
+      <LineId Id="363" Count="0" />
+      <LineId Id="382" Count="0" />
+      <LineId Id="384" Count="0" />
+      <LineId Id="364" Count="0" />
+      <LineId Id="376" Count="0" />
+      <LineId Id="374" Count="0" />
+      <LineId Id="377" Count="0" />
+      <LineId Id="383" Count="0" />
+      <LineId Id="357" Count="4" />
+      <LineId Id="356" Count="0" />
+      <LineId Id="431" Count="0" />
+      <LineId Id="429" Count="0" />
+      <LineId Id="312" Count="1" />
+      <LineId Id="66" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

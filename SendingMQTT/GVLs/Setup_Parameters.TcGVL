@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.3">
+  <GVL Name="Setup_Parameters" Id="{e34be7f1-48ea-4083-aeab-4752ce0ad31b}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL CONSTANT
+	sPlainStringTopic	: STRING(255)	:= 'Plain Temperatures';	// this the topic we will publish on for plain string data
+	sJsonStringTopic	: STRING(255)	:= 'JSON Temperatures';		// this the topic we will publish on for JSON formatted string data
+	sBrokerAddress		: STRING(255)	:= 'test.mosquitto.org';	// this is the address of the MQTT broker we are using
+	uiBrokerPort 		: UINT			:= 1883;					// the TCP port for the MQQT broker
+	tUpdateTime			: TIME			:= T#5S;					// the update time
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.3">
+  <GVL Name="Data_Published" Id="{dab71b4f-3fc8-432c-9b29-184e1b6a21e0}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL
+	stTempData	: ST_TemperatureStructure;	// this is the data that we will publish to our MQTT topic.
+
+	// String representation of data for MQQT messages
+	sJsonFormattedDataString	: STRING(255); //JSON formatted string
+    sPlainFormattedDataString	: STRING(255); //plain formatted string 
+	
+	// Count the messages sent
+	uiSent						: UINT;
+	
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

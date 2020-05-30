@@ -14,13 +14,24 @@
     <LibraryReferences>{d7977d01-2ebb-475b-a8de-3288262ad46f}</LibraryReferences>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="DUTs\TemperatureStructure.TcDUT">
+    <Compile Include="DUTs\ST_TemperatureStructure.TcDUT">
       <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="GVLs\Data_Published.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="GVLs\Setup_Parameters.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
     </Compile>
     <Compile Include="PlcTask.TcTTO">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\MAIN.TcPOU">
+    <Compile Include="POUs\FB_GenerateData.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\MAIN_Publisher.TcPOU">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
